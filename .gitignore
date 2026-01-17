@@ -1,0 +1,23 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+venv/
+.env
+.ipynb_checkpoints/
+
+# --- C++ ---
+build/
+*.o
+*.dylib
+hft_bot
+
+# --- Mac OS ---
+.DS_Store
+
+# --- Data (Too large for GitHub) ---
+*.npy
+*.pth
+# We KEEP trade_log.csv and enhanced_trade_analysis.csv as proof of results!
+
+# --- VS Code Settings ---
+.vscode/
