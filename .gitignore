@@ -20,4 +20,5 @@ hft_bot
 # We KEEP trade_log.csv and enhanced_trade_analysis.csv as proof of results!
 
 # --- VS Code Settings ---
-.vscode/
+.vscode/trade_log.csv
+enhanced_trade_analysis.csv
