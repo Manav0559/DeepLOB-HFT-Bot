@@ -88,7 +88,7 @@ int main() {
         // B. Parse JSON
         auto data = json::parse(readBuffer);
         
-        // C. Process Features (Math)
+        // C. Process Features
         vector<float> features = process_snapshot(data["bids"], data["asks"]);
         
         if (features.size() != 40) {
@@ -110,7 +110,6 @@ int main() {
         if (ans == "Buffering") {
             cout << ".";
         } else {
-            // Ans format: "Action,Conf" e.g., "2,0.65"
             cout << "Model Says: " << ans << endl;
         }
     }
