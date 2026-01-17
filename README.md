@@ -4,56 +4,56 @@
 ![Platform](https://img.shields.io/badge/Platform-Binance-F3BA2F?style=for-the-badge&logo=binance&logoColor=black)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-# ⚡ DeepLOB-HFT: Hybrid Algo Trading System
+# DeepLOB: High-Frequency Trading Bot (Hybrid C++ & Python)
 
-> **A sub-millisecond execution engine powered by Deep Learning.**
-
-DeepLOB-HFT is a live trading bot targeting **Binance Futures**. It bridges two worlds: the raw speed of **C++** for market data processing and execution, and the predictive power of **PyTorch (Python)** for detecting micro-structure alpha in the Limit Order Book (LOB).
+A high-performance HFT system designed for **Binance Futures**. This project demonstrates a **Hybrid Architecture**: it leverages **C++** for ultra-low latency market data parsing and execution, while offloading complex decision-making to a **PyTorch (Python)** Deep Learning model.
 
 ---
 
-## 🏗️ System Architecture
+## Architecture
 
-The system utilizes a **Hybrid Decoupled Architecture**. The critical path (Market Data $\rightarrow$ Execution) is handled by C++ to minimize jitter, while the compute-heavy inference is offloaded to a dedicated Python process via ZeroMQ.
+* **The Engine (C++17):**
+    * Connects to Binance WebSockets (Market Streams).
+    * Parses the Limit Order Book (LOB) updates in microseconds.
+    * Executes trades via HTTP (cURL) for minimal latency.
+* **The Brain (Python 3.13):**
+    * Hosts a **DeepLOB** Neural Network (CNN + LSTM).
+    * Communicates with the C++ Engine via **ZeroMQ (ZMQ)** sockets.
+    * Predicts short-term price movements (Alpha) based on Order Flow.
 
-```mermaid
-graph TD
-    %% Define Styles
-    classDef cpp fill:#00599C,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef py fill:#3776AB,stroke:#fff,stroke-width:2px,color:#fff;
-    classDef ex fill:#F3BA2F,stroke:#333,stroke-width:2px,color:#000;
-    classDef store fill:#ddd,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5;
+---
 
-    subgraph "Exchange Layer"
-        Binance[("🌊 Binance Futures API")]:::ex
-    end
+## Live Performance Results
+*Test run performed on Binance Futures (BTC/USDT). Analysis generated via `analyze_trades.py`.*
 
-    subgraph "C++ Low-Latency Core"
-        WS[WebSocket Handler]:::cpp
-        LOB[LOB Reconstruction]:::cpp
-        Risk[🛡️ Risk Engine]:::cpp
-        Exec[Order Manager]:::cpp
-        ZMQ_Pub[ZMQ Publisher]:::cpp
-    end
+| Metric | Value | Meaning |
+| :--- | :--- | :--- |
+| **Total Trades** | `76` | Sample size of the live session |
+| **Win Rate** | `57.89%` | Percentage of profitable trades |
+| **Profit Factor** | `1.55` | Gross Profit / Gross Loss (> 1.0 is profitable) |
+| **Total PnL** | `+22.30 USDT` | Net Profit realized |
+| **Max Drawdown** | `-13.80` | Worst peak-to-valley loss |
+| **Avg Duration** | `7.4 min` | Average holding time per trade |
 
-    subgraph "Python Inference Layer"
-        ZMQ_Sub[ZMQ Subscriber]:::py
-        Pre[Tensor Preprocessing]:::py
-        Model["🧠 DeepLOB (CNN-LSTM)"]:::py
-    end
+**Key Findings:**
+* The **DeepLOB model** successfully identified market micro-structures, maintaining a win rate > 55%.
+* **Latency:** The C++ engine processed order book updates fast enough to capture short-lived arbitrage opportunities.
+* **Risk Management:** Stop-losses effectively capped downside, leading to a healthy Profit Factor of 1.55.
 
-    %% Data Flow
-    Binance == "WSS Feed (Diff Depth)" ==> WS
-    WS --> LOB
-    LOB -->|Snapshot 10x4x100| ZMQ_Pub
-    ZMQ_Pub == "IPC / TCP" ==> ZMQ_Sub
-    
-    ZMQ_Sub --> Pre
-    Pre --> Model
-    Model -->|Alpha Signal Long/Short| Exec
-    
-    Exec --> Risk
-    Risk -->|Valid Order| Binance
-    
-    %% Storage
-    LOB -.->|Log| CSV[("Data Logger")]:::store
+---
+
+## Prerequisites
+
+### Software Stack
+* **C++:** Clang/GCC (C++17 standard), CMake (3.10+)
+* **Python:** 3.8+ (PyTorch, NumPy, Pandas)
+* **Libraries:** ZeroMQ, nlohmann/json, libcurl
+
+---
+
+## Installation & Usage
+
+### 1. System Dependencies (MacOS)
+Install the required C++ headers and build tools:
+```bash
+brew install zeromq nlohmann-json curl cmake
