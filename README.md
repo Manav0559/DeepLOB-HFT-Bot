@@ -1,3 +1,8 @@
+![Language](https://img.shields.io/badge/Language-C%2B%2B17-00599C?style=for-the-badge&logo=c%2B%2B)
+![Language](https://img.shields.io/badge/Language-Python_3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Framework](https://img.shields.io/badge/AI-PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
+![Platform](https://img.shields.io/badge/Platform-Binance-F3BA2F?style=for-the-badge&logo=binance&logoColor=black)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 # DeepLOB: High-Frequency Trading Bot (Hybrid C++ & Python)
 
 A high-performance HFT system designed for **Binance Futures**. This project demonstrates a **Hybrid Architecture**: it leverages **C++** for ultra-low latency market data parsing and execution, while offloading complex decision-making to a **PyTorch (Python)** Deep Learning model.
