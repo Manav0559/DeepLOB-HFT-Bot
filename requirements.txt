@@ -1,5 +1,7 @@
 torch
 numpy
 pandas
-requests
 websockets
+pyzmq
+ccxt
+tqdm

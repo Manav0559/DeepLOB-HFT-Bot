@@ -1,68 +1,6 @@
 import torch
 import torch.nn as nn
 
-class DeepLOB(nn.Module):
-    def __init__(self, y_len=3):
-        super().__init__()
-        self.y_len = y_len
-        
-        # Looks at small groups of orders (like a cluster of bids)
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=16, kernel_size=(1, 2), stride=(1, 1)),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.BatchNorm2d(16),
-            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(4, 1), padding='same'),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.BatchNorm2d(16),
-            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=(4, 1), padding='same'),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.BatchNorm2d(16),
-        )
-
-        # Combines the patterns to see the "Shape" of the book
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(1, 2), stride=(1, 2)),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.BatchNorm2d(32),
-            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(4, 1), padding='same'),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.BatchNorm2d(32),
-            nn.Conv2d(in_channels=32, out_channels=32, kernel_size=(4, 1), padding='same'),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.BatchNorm2d(32),
-        )
-
-        # The CNNs looked at specific snapshots. The LSTM watches.
-        # It remembers what happened 10 seconds ago to understand context.
-        self.lstm = nn.LSTM(input_size=10, hidden_size=64, num_layers=1, batch_first=True)
-        
-        # Buy (2), Sell (0), or Hold (1)
-        self.fc1 = nn.Linear(64, 3)
-
-    def forward(self, x):
-        # x shape: (Batch, 1, 100, 40)
-        
-        # Pass through CNN Blocks
-        x = self.conv1(x)
-        x = self.conv2(x)
-        
-        # x shape is now: (Batch, 32, 100, 10)
-        # Reshape it for the LSTM
-        # Combine Channels (32) and Height (10) -> 320 features? 
-        # Actually, for this specific standard architecture:
-        x = x.permute(0, 2, 1, 3) # (Batch, 100, 32, 10)
-        x = x.reshape(x.shape[0], x.shape[1], -1) # (Batch, 100, 320)
-        
-        # We force it down to size 10 linear projection before LSTM to save memory
-        
-        # Run LSTM
-        # We just want the LAST output (the prediction for "now")
-        lstm_out, _ = self.lstm(x) # Input needs to match. 
-        # Wait, 32*10 = 320 input size. My definition above has input_size=10.
-        
-        pass 
-    
-    
 class DeepLOB_Simplified(nn.Module):
     def __init__(self):
         super().__init__()

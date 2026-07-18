@@ -1,59 +1,49 @@
-![Language](https://img.shields.io/badge/Language-C%2B%2B17-00599C?style=for-the-badge&logo=c%2B%2B)
-![Language](https://img.shields.io/badge/Language-Python_3.8%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Framework](https://img.shields.io/badge/AI-PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
-![Platform](https://img.shields.io/badge/Platform-Binance-F3BA2F?style=for-the-badge&logo=binance&logoColor=black)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+# CNN-LSTM on Binance order-book snapshots — experimental prototype
 
-# DeepLOB: High-Frequency Trading Bot (Hybrid C++ & Python)
+> **Status: learning-stage prototype, being rebuilt.** The next iteration is
+> a faithful DeepLOB (Zhang et al., 2019) replication validated on the
+> FI-2010 benchmark, with chronological embargoed splits and cost-aware
+> replay evaluation. Until that lands, everything here should be read as a
+> prototype with the limitations listed below.
 
-A high-performance HFT system designed for **Binance Futures**. This project demonstrates a **Hybrid Architecture**: it leverages **C++** for ultra-low latency market data parsing and execution, while offloading complex decision-making to a **PyTorch (Python)** Deep Learning model.
+A two-process experiment: a C++ client polls Binance's public REST depth
+endpoint, normalizes the top 10 levels per side into 40 features, and ships
+them over ZeroMQ (raw float32 payload) to a Python server running a small
+CNN-LSTM classifier (`DeepLOB_Simplified` — a reduced stand-in, **not** the
+full DeepLOB architecture) that paper-trades the resulting signal.
 
----
+## Honest scope
 
-## Architecture
+- **Spot REST polling, not WebSockets.** Decision cadence is hundreds of
+  milliseconds to seconds. This is not HFT, and no latency is measured
+  anywhere in this repo.
+- **Paper trading only.** There is no order execution. Fills are simulated at
+  ticker price with zero fees, spread, or slippage, so any simulated PnL is
+  optimistic by construction and no performance figures are published here.
+- **Known training-pipeline flaw.** The committed preprocessing class-balances
+  and shuffles rows *before* windowing and the train/test split, which
+  scrambles the sequences and leaks across the split — reported validation
+  accuracy is not meaningful. The rebuild replaces this with contiguous
+  windows and chronological, embargoed splits.
+- **The solid piece:** `data_ingest.py` — Binance `depth20@100ms` WebSocket
+  collection to CSV with reconnect — carries over to the rebuild unchanged.
 
-* **The Engine (C++17):**
-    * Connects to Binance WebSockets (Market Streams).
-    * Parses the Limit Order Book (LOB) updates in microseconds.
-    * Executes trades via HTTP (cURL) for minimal latency.
-* **The Brain (Python 3.13):**
-    * Hosts a **DeepLOB** Neural Network (CNN + LSTM).
-    * Communicates with the C++ Engine via **ZeroMQ (ZMQ)** sockets.
-    * Predicts short-term price movements (Alpha) based on Order Flow.
+## Pipeline
 
----
+1. `data_ingest.py` — collect 100ms depth snapshots to CSV
+2. `preprocess_balanced.py` — features + fixed-horizon labels
+3. `train.py` — train `DeepLOB_Simplified` (saves `model_balanced.pth`)
+4. `strategy_server.py` (Python, ZMQ REP) + `bot.cpp` (C++ client) — live
+   signal loop, paper only
 
-## Live Performance Results
-*Test run performed on Binance Futures (BTC/USDT). Analysis generated via `analyze_trades.py`.*
+## Build & run
 
-| Metric | Value | Meaning |
-| :--- | :--- | :--- |
-| **Total Trades** | `76` | Sample size of the live session |
-| **Win Rate** | `57.89%` | Percentage of profitable trades |
-| **Profit Factor** | `1.55` | Gross Profit / Gross Loss (> 1.0 is profitable) |
-| **Total PnL** | `+22.30 USDT` | Net Profit realized |
-| **Max Drawdown** | `-13.80` | Worst peak-to-valley loss |
-| **Avg Duration** | `7.4 min` | Average holding time per trade |
-
-**Key Findings:**
-* The **DeepLOB model** successfully identified market micro-structures, maintaining a win rate > 55%.
-* **Latency:** The C++ engine processed order book updates fast enough to capture short-lived arbitrage opportunities.
-* **Risk Management:** Stop-losses effectively capped downside, leading to a healthy Profit Factor of 1.55.
-
----
-
-## Prerequisites
-
-### Software Stack
-* **C++:** Clang/GCC (C++17 standard), CMake (3.10+)
-* **Python:** 3.8+ (PyTorch, NumPy, Pandas)
-* **Libraries:** ZeroMQ, nlohmann/json, libcurl
-
----
-
-## Installation & Usage
-
-### 1. System Dependencies (MacOS)
-Install the required C++ headers and build tools:
 ```bash
-brew install zeromq nlohmann-json curl cmake
+# C++ client
+cmake -B build && cmake --build build
+
+# Python side
+pip install -r requirements.txt
+python strategy_server.py   # terminal 1
+./build/hft_bot             # terminal 2
+```

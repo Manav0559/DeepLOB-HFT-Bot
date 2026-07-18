@@ -11,11 +11,8 @@ link_directories(/opt/homebrew/lib)
 find_package(Threads REQUIRED)
 find_package(CURL REQUIRED)
 
-# 3. Find all .cpp files
-file(GLOB SOURCES "src/*.cpp")
-
-# 4. Create the executable
-add_executable(hft_bot ${SOURCES})
+# 3. Create the executable
+add_executable(hft_bot bot.cpp)
 
 # 5. GLUE EVERYTHING TOGETHER (Link Libraries)
 target_link_libraries(hft_bot

@@ -138,7 +138,7 @@ for epoch in range(EPOCHS):
     
     if val_acc > best_acc:
         best_acc = val_acc
-        torch.save(model.state_dict(), "model_v2_war_brain.pth")
+        torch.save(model.state_dict(), "model_balanced.pth")
         print("Model Saved!")
         
 print("Training Complete.")
