@@ -94,7 +94,11 @@ while True:
             socket.send_string(f"{action},{conf_score:.4f}")
             continue
 
-        if len(price_history) == 50:
+        # Volatility is only meaningful once the price window is full. During
+        # warm-up there is no estimate, so entries are skipped below (the old
+        # 999.0 placeholder passed the VOLATILITY_THRESHOLD entry filter).
+        vol_ready = len(price_history) == price_history.maxlen
+        if vol_ready:
             volatility = np.std(price_history)
         else:
             volatility = 999.0
@@ -144,7 +148,7 @@ while True:
                 reply = "CLOSE"
 
         # ENTRY LOGIC
-        elif position is None and conf_score > CONFIDENCE_THRESHOLD and action != 1:
+        elif position is None and vol_ready and conf_score > CONFIDENCE_THRESHOLD and action != 1:
             if volatility > VOLATILITY_THRESHOLD:
                 if action == 2:
                     position = 'LONG'
